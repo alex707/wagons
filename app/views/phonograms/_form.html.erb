@@ -1,0 +1,24 @@
+<%= form_with(model: phonogram) do |form| %>
+  <% if phonogram.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(phonogram.errors.count, "error") %> prohibited this phonogram from being saved:</h2>
+
+      <ul>
+        <% phonogram.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :source_sound %>
+    </br>
+    <%= form.file_field :source_sound %>
+    </br>
+  </div>
+
+  <div class="actions">
+    <%= form.submit 'Save', class: 'btn btn-primary' %>
+  </div>
+<% end %>
