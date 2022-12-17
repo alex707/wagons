@@ -1,0 +1,19 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Record ID:</strong>
+  <%= @phonogram.id %>
+</p>
+
+<p>
+  <strong>Data:</strong>
+  <%= @phonogram.data %>
+</p>
+
+<p>
+  <strong>Source Sound:</strong>
+  <%= link_to @phonogram.source_sound.filename, rails_blob_path(@phonogram.source_sound.blob, disposition: 'preview') %>
+</p>
+
+<%= link_to 'Edit', edit_phonogram_path(@phonogram) %> |
+<%= link_to 'Back', phonograms_path %>
