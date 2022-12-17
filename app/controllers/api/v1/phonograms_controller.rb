@@ -6,12 +6,17 @@ class Api::V1::PhonogramsController < ApplicationController
 
     render json:(
       phonograms.map { |elem|
+        if elem.parsed_csv.attached?
+          parsed_csv = Rails.application.routes.url_helpers.rails_blob_path(elem.parsed_csv.blob, disposition: 'preview')
+        end
+
         {
           'phonogram_id' => elem.id,
           'user_id' => elem.user_id,
           'user_name' => elem&.user&.name,
           'status' => elem.status,
           'filename' => elem.source_sound.filename,
+          'parsed_csv_link' => parsed_csv,
           'source_sound_link' => Rails.application.routes.url_helpers.rails_blob_path(elem.source_sound.blob, disposition: 'preview')
         }
       }
@@ -21,6 +26,10 @@ class Api::V1::PhonogramsController < ApplicationController
   def show
     elem = Phonogram.find(params[:id])
 
+    if elem.parsed_csv.attached?
+      parsed_csv = Rails.application.routes.url_helpers.rails_blob_path(elem.parsed_csv.blob, disposition: 'preview')
+    end
+
     render json: 
       {
         'phonogram_id' => elem.id,
@@ -28,6 +37,7 @@ class Api::V1::PhonogramsController < ApplicationController
         'user_name' => elem&.user&.name,
         'status' => elem.status,
         'filename' => elem.source_sound.filename,
+        'parsed_csv_link' => parsed_csv,
         'source_sound_link' => Rails.application.routes.url_helpers.rails_blob_path(elem.source_sound.blob, disposition: 'preview')
       }
   end
@@ -39,12 +49,19 @@ class Api::V1::PhonogramsController < ApplicationController
     if @phonogram.save
       @phonogram.update(status: 1) if @phonogram.source_sound.attached?
 
+      if @phonogram.parsed_csv.attached?
+        parsed_csv = Rails.application.routes.url_helpers.rails_blob_path(@phonogram.parsed_csv.blob, disposition: 'preview')
+      end
+
+      YaSpeechKit::Uploader.new(phonogram).call
+
       render json: {
         'phonogram_id' => @phonogram.id,
         'user_id' => @phonogram.user_id,
         'user_name' => @phonogram&.user&.name,
-        'status' => elem.status,
+        'status' => @phonogram.status,
         'filename' => @phonogram.source_sound.filename,
+        'parsed_csv_link' => parsed_csv,
         'source_sound_link' => Rails.application.routes.url_helpers.rails_blob_path(@phonogram.source_sound.blob, disposition: 'preview')
       }
     else
@@ -60,8 +77,6 @@ class Api::V1::PhonogramsController < ApplicationController
   end
 end
 
-
-
 # Processing by PhonogramsController#create as HTML
 # Parameters: {
 #   "authenticity_token"=>"[FILTERED]", "phonogram"=>
@@ -75,3 +90,7 @@ end
 #   },
 #   "commit"=>"Save"
 # }
+
+# curl --location --request POST 'http://91.107.35.153:3000/api/v1/phonograms?user_id=2' \
+# --header 'Cookie: __profilin=p%3Dt' \
+# --form 'source_sound=@"/Users/liveafun/Downloads/some_rec_1.mp3"'

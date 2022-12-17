@@ -11,6 +11,21 @@
 </p>
 
 <p>
+  <strong>Status:</strong>
+  <%= @phonogram.status %>
+</p>
+
+<p>
+  <strong>source_sound_key:</strong>
+  <%= @phonogram&.source_sound&.key %>
+</p>
+
+<p>
+  <strong>parsed_csv_key:</strong>
+  <%= @phonogram&.parsed_csv&.key %>
+</p>
+
+<p>
   <strong>Parsed text:</strong>
   <%= @phonogram.parsed_text %>
 </p>

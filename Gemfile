@@ -31,6 +31,7 @@ gem 'jbuilder', '~> 2.7'
 gem 'rack-cors'
 
 gem 'envyable'
+gem 'byebug'
 
 gem 'aws-sdk-s3', require: false
 
