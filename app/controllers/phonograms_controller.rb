@@ -26,6 +26,7 @@ class PhonogramsController < ApplicationController
 
     respond_to do |format|
       if @phonogram.save
+        @phonogram.update(status: 1) if @phonogram.source_sound.attached?
         format.html { redirect_to phonogram_url(@phonogram), notice: "Phonogram was successfully created." }
         format.json { render :show, status: :created, location: @phonogram }
       else
@@ -69,6 +70,6 @@ class PhonogramsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def phonogram_params
-      params.require(:phonogram).permit(:data, :source_sound)
+      params.require(:phonogram).permit(:source_sound, :user_id)
     end
 end
