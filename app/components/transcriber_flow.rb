@@ -1,6 +1,12 @@
-# phonogram = Phonogram.find(13)
+# phonogram = Phonogram.find(15)
 # phonogram.flush
 # TranscriberFlow.new(phonogram).call
+
+# loop do
+#   Phonograms.where(status: 1).each do |phonogram|
+#     TranscriberFlow.new(phonogram).call
+#   end
+# end
 
 class TranscriberFlow
   PROVIDER = :ya

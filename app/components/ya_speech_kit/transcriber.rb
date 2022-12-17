@@ -30,7 +30,7 @@ module YaSpeechKit
         raise if @response_body.empty? || @response_body['done'].to_s != 'true'
       rescue
         if (attempts += 1) < @max_attempts
-          puts "task is not done retrying.."
+          puts "task is not done retrying..\n"
           flush
 
           retry
