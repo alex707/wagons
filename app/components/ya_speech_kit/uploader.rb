@@ -32,6 +32,7 @@ module YaSpeechKit
 
     def call
       return unless phonogram.task_uuid.to_s.empty?
+      return if phonogram.status == 7
 
       if request.success?
         phonogram.update(status: 2, task_uuid: response_body.try(:[], 'id'))
@@ -39,10 +40,22 @@ module YaSpeechKit
         Rails.logger.error 'an error occured in transcribition'
 
         phonogram.update(status: 7)
+
+        raise request.inspect
       end
     end
 
     private
+
+    def source_format
+      source_format = if phonogram.source_sound.blob.filename.to_s.downcase.end_with?('wav')
+        'LINEAR16_PCM'
+      elsif phonogram.source_sound.blob.filename.to_s.downcase.end_with?('mp3')
+        'MP3'
+      else
+        'OGG_OPUS'
+      end
+    end
 
     def options
       options = {
@@ -52,10 +65,9 @@ module YaSpeechKit
             model: 'general',
             profanityFilter: false,
             literature_text: true,
-            # audioEncoding: 'LINEAR16_PCM',
+            audioEncoding: source_format,
             # sampleRateHertz: 48000,
-            audioEncoding: 'MP3',
-            sampleRateHertz: 44100,
+            sampleRateHertz: source_format == 'LINEAR16_PCM' ? 48000 : 44100,
           }
         },
         audio: {
@@ -65,11 +77,11 @@ module YaSpeechKit
     end
 
     def params
-      {}
+      params = {}
     end
 
     def connection
-      connection = Faraday.new(url: ENGINE_URL) do |c|
+      @connection ||= Faraday.new(url: ENGINE_URL) do |c|
         c.use Faraday::Request::UrlEncoded
         c.use Faraday::Response::Logger
         # c.use Faraday::Adapter::NetHttp
@@ -77,7 +89,7 @@ module YaSpeechKit
     end
 
     def request
-      response = connection.post ENGINE_PATH, params do |request|
+      @request ||= connection.post ENGINE_PATH, params do |request|
         request.headers['Content-Type'] = 'application/json'
         request.headers['Authorization'] = "Api-Key #{ENV['YC_SK_SECRET_ACCESS_KEY']}"
         request.body = JSON.generate(options)
@@ -85,7 +97,12 @@ module YaSpeechKit
     end
 
     def response_body
-      return unless request.success?
+      unless request.success?
+        phonogram.update(status: 7)
+
+        raise request.inspect
+        return
+      end
 
       JSON.parse(request.body)
     end

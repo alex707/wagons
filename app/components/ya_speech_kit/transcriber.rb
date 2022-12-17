@@ -5,58 +5,85 @@ require 'faraday'
 
 module YaSpeechKit
   class Transcriber
-    attr_reader :phonogram, :aggrigate_words
-
     SKK_ENGINE_URL = 'https://operation.api.cloud.yandex.net'.freeze
     SKK_ENGINE_PATH = '/operations'.freeze
 
     def initialize(phonogram)
       @phonogram = phonogram
+
+      # Ya has very big problems with respond in correct time
+      @max_attempts = (@phonogram.source_sound_blob.byte_size.to_i / 1000000 / 5) + 10
     end
 
     def call
-      return if phonogram.status.to_i < 2
+      return if @phonogram.status.to_i < 2
 
-      return unless response_body.any?
-      return unless response_body['response']
+      begin
+        attempts ||= 1
+        return if attempts > @max_attempts
 
-      phonogram.update(parsed_text: aggrigate_words, status: 3)
+        Rails.logger.info('')
+        Rails.logger.info("attmpt: #{attempts}")
+
+        make_request
+
+        raise if @response_body.empty? || @response_body['done'].to_s != 'true'
+      rescue
+        if (attempts += 1) < @max_attempts
+          puts "task is not done retrying.."
+          flush
+
+          retry
+        end
+      end
+
+      return if !@response_body.key?('response') || !@response_body['response']&.key?('chunks')
+
+      @phonogram.update(parsed_text: aggrigate_words, status: 3)
     end
 
     private
 
-    def params
-      {}
+    def flush
+      @connection = nil
+      @request = nil
+      @response_body = nil
+
+      sleep 5
     end
 
-    def connection
-      connection = Faraday.new(url: SKK_ENGINE_URL) do |c|
+    def params
+      params = {}
+    end
+
+    def make_request
+      Rails.logger.info("connecting...")
+      @connection ||= Faraday.new(url: SKK_ENGINE_URL) do |c|
         c.use Faraday::Request::UrlEncoded
         c.use Faraday::Response::Logger
       end
-    end
+      Rails.logger.info("connected")
 
-    def request
-      response = connection.get "#{SKK_ENGINE_PATH}/#{phonogram.task_uuid}", params do |request|
-        request.headers['Authorization'] = "Api-Key #{ENV['YC_SK_SECRET_ACCESS_KEY']}"
-        request.body = JSON.generate({})
+      Rails.logger.info("sending_request...")
+      @request ||= @connection.get "#{SKK_ENGINE_PATH}/#{@phonogram.task_uuid}", params do |r|
+        r.headers['Authorization'] = "Api-Key #{ENV['YC_SK_SECRET_ACCESS_KEY']}"
+        r.body = JSON.generate({})
       end
-    end
+      Rails.logger.info("request_was_sent")
 
-    def response_body
-      return unless request.success?
+      if @request.headers["content-length"].to_i < 200 || !@request.success? || JSON.parse(@request.body).nil?
+        @response_body = {}
+      end
 
-      JSON.parse(request.body)
-      # JSON.parse(response.body)
+      @response_body ||= JSON.parse(@request.body)
+      @response_body
     end
 
     def aggrigate_words
-      return '' unless response_body['response']['chunks']&.any?
+      return '' unless @response_body['response']['chunks']&.any?
 
-      @aggrigate_words ||= response_body['response']['chunks'].map do |a|
-        a['alternatives'].map do |b|
-          b['text']
-        end
+      @aggrigate_words ||= @response_body['response']['chunks'].map do |a|
+        a['alternatives'].map { |b| b['text'] }
       end.flatten.join(' ')
     end
   end

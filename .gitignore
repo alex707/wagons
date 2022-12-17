@@ -17,6 +17,8 @@
 /tmp/pids/*
 !/tmp/pids/
 !/tmp/pids/.keep
+!/tmp/csvs/
+!/tmp/csvs/.keep
 
 # Ignore uploaded files in development.
 /storage/*

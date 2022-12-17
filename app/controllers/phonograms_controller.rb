@@ -24,6 +24,8 @@ class PhonogramsController < ApplicationController
     @phonogram = Phonogram.new(phonogram_params)
     @phonogram.source_sound.attach(phonogram_params[:source_sound])
 
+    YaSpeechKit::Uploader.new(phonogram).call
+
     respond_to do |format|
       if @phonogram.save
         @phonogram.update(status: 1) if @phonogram.source_sound.attached?
@@ -38,8 +40,12 @@ class PhonogramsController < ApplicationController
 
   # PATCH/PUT /phonograms/1 or /phonograms/1.json
   def update
-    # raise phonogram_params[:source_sound].inspect
+    @phonogram.source_sound&.destroy
+    @phonogram.parsed_csv&.destroy
     @phonogram.source_sound.attach(phonogram_params[:source_sound])
+
+    phonogram.flush
+    YaSpeechKit::Uploader.new(phonogram).call
 
     respond_to do |format|
       if @phonogram.valid?
@@ -54,6 +60,8 @@ class PhonogramsController < ApplicationController
 
   # DELETE /phonograms/1 or /phonograms/1.json
   def destroy
+    @phonogram.source_sound&.destroy
+    @phonogram.parsed_csv&.destroy
     @phonogram.destroy
 
     respond_to do |format|
