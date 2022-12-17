@@ -8,7 +8,9 @@ class Api::V1::PhonogramsController < ApplicationController
       phonograms.map { |elem|
         {
           'phonogram_id' => elem.id,
-          'data' => elem.data,
+          'user_id' => elem.user_id,
+          'user_name' => elem&.user&.name,
+          'status' => elem.status,
           'filename' => elem.source_sound.filename,
           'source_sound_link' => Rails.application.routes.url_helpers.rails_blob_path(elem.source_sound.blob, disposition: 'preview')
         }
@@ -22,20 +24,26 @@ class Api::V1::PhonogramsController < ApplicationController
     render json: 
       {
         'phonogram_id' => elem.id,
-        'data' => elem.data,
+        'user_id' => elem.user_id,
+        'user_name' => elem&.user&.name,
+        'status' => elem.status,
         'filename' => elem.source_sound.filename,
         'source_sound_link' => Rails.application.routes.url_helpers.rails_blob_path(elem.source_sound.blob, disposition: 'preview')
       }
   end
 
   def create
-    @phonogram = Phonogram.new
+    @phonogram = Phonogram.new(user_id: params[:user_id])
     @phonogram.source_sound.attach(params[:source_sound])
 
     if @phonogram.save
+      @phonogram.update(status: 1) if @phonogram.source_sound.attached?
+
       render json: {
         'phonogram_id' => @phonogram.id,
-        'data' => @phonogram.data,
+        'user_id' => @phonogram.user_id,
+        'user_name' => @phonogram&.user&.name,
+        'status' => elem.status,
         'filename' => @phonogram.source_sound.filename,
         'source_sound_link' => Rails.application.routes.url_helpers.rails_blob_path(@phonogram.source_sound.blob, disposition: 'preview')
       }
@@ -48,7 +56,7 @@ class Api::V1::PhonogramsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def phonogram_params
-    params.require(:phonogram).permit(:data, :source_sound)
+    params.require(:phonogram).permit(:source_sound, :user_id)
   end
 end
 

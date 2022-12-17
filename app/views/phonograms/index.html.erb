@@ -6,7 +6,7 @@
   <thead>
     <tr>
       <th>Record ID</th>
-      <th>Data</th>
+      <th>User</th>
       <th>Attached?</th>
       <th colspan="3"></th>
     </tr>
@@ -16,7 +16,7 @@
     <% @phonograms.each do |phonogram| %>
       <tr>
         <td><%= phonogram.id %></td>
-        <td><%= phonogram.data ? '' : 'none' %></td>
+        <td><%= phonogram&.user&.name %></td>
         <td><%= phonogram.source_sound.attached? %></td>
         <td><%= link_to 'Show', phonogram %></td>
         <td><%= link_to 'Edit', edit_phonogram_path(phonogram) %></td>

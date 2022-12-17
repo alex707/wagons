@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_12_16_175135) do
+ActiveRecord::Schema.define(version: 2022_12_17_164109) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -44,7 +44,16 @@ ActiveRecord::Schema.define(version: 2022_12_16_175135) do
   end
 
   create_table "phonograms", force: :cascade do |t|
-    t.jsonb "data"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.integer "user_id"
+    t.integer "status"
+    t.string "task_uuid"
+    t.text "parsed_text"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
