@@ -1,11 +1,17 @@
-# phonogram = Phonogram.find(15)
+# phonogram = Phonogram.find(7)
 # phonogram.flush
 # TranscriberFlow.new(phonogram).call
 
+
+# t = Time.new(2022, 12, 18, 11, 0, 0, '+03:00')
 # loop do
-#   Phonograms.where(status: 1).each do |phonogram|
+#   Phonogram.where('created_at > ?', t).where(status: 1).each do |phonogram|
+#     puts "----->>> started #{phonogram.id}\n"
 #     TranscriberFlow.new(phonogram).call
+#     puts "----->>> ended #{phonogram.id}\n"
 #   end
+#   puts "waiting..."
+#   sleep 10
 # end
 
 class TranscriberFlow
